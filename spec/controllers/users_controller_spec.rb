@@ -95,7 +95,7 @@ describe UsersController do
       response.should have_selector("title", :content => @user.name)
     end
 
-    it "should include the uesr's name" do
+    it "should include the user's name" do
       get :show, :id => @user
       response.should have_selector("h1", :content => @user.name)
     end
@@ -356,7 +356,7 @@ describe UsersController do
       end
     end
 
-    describe "as a non-admin uesr" do
+    describe "as a non-admin user" do
       it "should protect the page" do
         test_sign_in(@user)
         delete :destroy, :id => @user
@@ -387,6 +387,43 @@ describe UsersController do
           delete :destroy, :id => @admin
         end.should_not change(User, :count)
         response.should redirect_to(users_path)
+      end
+    end
+  end
+
+  describe "follow pages" do
+
+    describe "when not signed in" do
+
+      it "should protect 'folowing'" do
+        get :following, :id => 1
+        response.should redirect_to(signin_path)
+      end
+
+      it "should protect 'followers'" do
+        get :followers, :id => 1
+        response.should redirect_to(signin_path)
+      end
+    end
+
+    describe "when signed in" do
+
+      before(:each) do
+        @user = test_sign_in(Factory(:user))
+        @other_user = Factory(:user, :email => Factory.next(:email))
+        @user.follow!(@other_user)
+      end
+
+      it "should show user following" do
+        get :following, :id => @user
+        response.should have_selector("a", :href => user_path(@other_user),
+                                           :content => @other_user.name)
+      end
+
+      it "should show user followers" do
+        get :followers, :id => @other_user
+        response.should have_selector("a", :href => user_path(@user),
+                                           :content => @user.name)
       end
     end
   end
